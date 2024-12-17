@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Gráfico</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Gráfico de Consumo e Geração</h1>
+    <canvas id="consumo-chart" width="400" height="200"></canvas>
+    <button id="generateUrlBtn">Gerar URL da Imagem</button>
+    <h3>Imagem do Gráfico:</h3>
+    <img id="chartImage" alt="Gráfico gerado" style="display:none;"/>
+    <p id="imageUrl"></p>
+
+    <script>
+        const ctx = document.getElementById('consumo-chart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                datasets: [
+                    {
+                        label: 'Consumo (kWh)',
+                        data: [3000, 3100, 3050, 3200, 2900, 3000, 3100, 2950, 3100, 3000, 3100, 3050],
+                        backgroundColor: '#B2B6C2',
+                    },
+                    {
+                        label: 'Geração (kWh)',
+                        data: [2800, 2900, 3000, 3100, 3200, 3300, 3100, 3000, 2950, 3050, 3000, 3100],
+                        backgroundColor: '#198142',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Consumo e Geração de Energia'
+                    }
+                }
+            }
+        });
+
+        document.getElementById('generateUrlBtn').addEventListener('click', () => {
+            const imageUrl = myChart.toBase64Image(); // Converte o gráfico para uma imagem base64
+
+            // Envia a imagem para o servidor
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageUrl })
+            })
+            .then(response => {
+                console.log('Resposta do servidor:', response); // Log da resposta do servidor
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const imgElement = document.getElementById('chartImage'); // Seleciona o elemento <img>
+                imgElement.src = data.url; // Define o src do <img> como a URL retornada
+                imgElement.style.display = 'block'; // Exibe a imagem
+                document.getElementById('imageUrl').innerText = `URL da Imagem: ${data.url}`; // Exibe a URL
+            })
+            .catch(error => {
+                console.error('Erro ao enviar a imagem:', error);
+                alert('Ocorreu um erro ao gerar a URL da imagem. Tente novamente.');
+            });
+        });
+    </script>
+</body>
+</html>
